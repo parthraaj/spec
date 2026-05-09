@@ -38,6 +38,10 @@ service Controller {
   // information.
   rpc GetVolumeReplicationInfo (GetVolumeReplicationInfoRequest)
   returns (GetVolumeReplicationInfoResponse) {}
+  // GetReplicationDestinationInfo RPC call to get the destination
+  // volume or volume group details for an existing replication.
+  rpc GetReplicationDestinationInfo (GetReplicationDestinationInfoRequest)
+  returns (GetReplicationDestinationInfoResponse) {}
 }
 // EnableVolumeReplicationRequest holds the required information to enable
 // replication on a volume.
@@ -278,6 +282,55 @@ message GetVolumeReplicationInfoResponse {
   // This field is OPTIONAL.
   string status_message = 5;
 }
+
+// GetReplicationDestinationInfoRequest holds the required information to
+// get the destination volume or volume group details for an existing replication.
+message GetReplicationDestinationInfoRequest {
+  // The source volume or volume group for which destination
+  // details are requested.
+  // This field is REQUIRED.
+  ReplicationSource replication_source = 1;
+  // Secrets required by the plugin to complete the request.
+  map<string, string> secrets = 2 [(csi.v1.csi_secret) = true];
+}
+
+// GetReplicationDestinationInfoResponse holds the destination volume
+// or volume group details for an existing replication.
+message GetReplicationDestinationInfoResponse {
+  // The destination details for the replication.
+  // This field is REQUIRED.
+  ReplicationDestination replication_destination = 1;
+}
+
+// Specifies the destination details for a replication. One of the
+// type fields MUST be specified.
+message ReplicationDestination {
+  // VolumeDestination contains the destination details for a replicated volume.
+  message VolumeDestination {
+    // The destination volume ID on the remote/target cluster.
+    // This field is REQUIRED.
+    string volume_id = 1;
+  }
+  // VolumeGroupDestination contains the destination details for a
+  // replicated volume group.
+  message VolumeGroupDestination {
+    // The destination volume group ID on the remote/target cluster.
+    // This field is REQUIRED.
+    string volume_group_id = 1;
+    // Mapping of source volume IDs to their corresponding destination volume IDs.
+    // Key is source volume_id, value is destination volume_id.
+    // This field is OPTIONAL.
+    map<string, string> volume_ids = 2;
+  }
+
+  oneof type {
+    // Volume destination type
+    VolumeDestination volume = 1;
+    // Volume group destination type
+    VolumeGroupDestination volumegroup = 2;
+  }
+}
+
 // Specifies what source the replication will be created from. One of the
 // type fields MUST be specified.
 message ReplicationSource {
